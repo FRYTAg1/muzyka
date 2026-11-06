@@ -211,7 +211,7 @@ ol.how{margin:0;padding-left:20px;display:grid;gap:8px}
           <li>Każde wylosowanie to <b>+1 punkt</b> dla tej osoby.</li>
           <li>Szansa zależy od punktów: waga = <span class="formula" id="formula">1 / (1 + punkty)²</span>. Osoba z 0 pkt ma 4 razy większą wagę niż ktoś z 1 pkt, ale los dalej decyduje.</li>
           <li>W jednym tygodniu nikt nie gra drugi raz, dopóki każdy nie zagrał raz. Gdy miejsc jest więcej niż osób, dodatkowe przerwy rozkładają się po równo, nigdy dwa razy tego samego dnia.</li>
-          <li>Kolumna „Szansa” to wynik 1500 próbnych losowań na obecnych punktach. Liczba z „×” mówi, ile przerw średnio dostanie dana osoba.</li>
+          <li>Kolumna „Szansa” pokazuje, jaką część wszystkich losów ma dana osoba. Razem wszyscy mają 100%, więc im mniej punktów, tym większy procent.</li>
         </ol>
       </section>
 
@@ -347,7 +347,7 @@ function drawCells({pool,points,cells,off,rows,strength,rng=Math.random}){
   }
   return{cells:out,order};
 }
-let simInfo="";
+let simInfo="",maxShare=1;
 function simulate(){
   const pool=activePool(),w=curWeek(),rows=config.slots.length,n=1500,cnt={},tot={};
   const pts={};pool.forEach(p=>pts[p.id]=p.points||0);
@@ -365,8 +365,11 @@ function simulate(){
     for(const[r,d]of order){const id=cells[r+"-"+d].pid;tot[id]=(tot[id]||0)+1;seen.add(id)}
     seen.forEach(id=>cnt[id]=(cnt[id]||0)+1);
   }
-  pool.forEach(p=>chances[p.id]={p:(cnt[p.id]||0)/n,e:(tot[p.id]||0)/n});
-  if(slots>=pool.length)simInfo+=" Miejsc jest więcej niż osób, więc każdy gra przynajmniej raz. Liczy się, kto zagra więcej razy.";
+  /* Udział w losie: jaka część wszystkich „losów” należy do osoby. Suma wszystkich = 100%. */
+  const sumW=pool.reduce((a,p)=>a+weight(p.points||0,config.strength),0);
+  pool.forEach(p=>chances[p.id]={share:weight(p.points||0,config.strength)/sumW,p:(cnt[p.id]||0)/n,e:(tot[p.id]||0)/n});
+  maxShare=Math.max(...pool.map(p=>chances[p.id].share));
+  simInfo="Procent to udział w losowaniu: jaka część wszystkich losów należy do danej osoby. Razem wszyscy mają 100%.";
 }
 function scheduleSim(){clearTimeout(simTimer);simTimer=setTimeout(()=>{simulate();renderPeople()},120)}
 
@@ -457,9 +460,9 @@ function renderPeople(){
     const chCell=el("td",{class:"num"});
     if(ch==null)chCell.append("–");
     else{
-      const m=el("span",{class:"meter"},el("span",{style:"width:"+Math.round(ch.p*100)+"%"}));
-      const txt=Math.round(ch.p*100)+"%"+(ch.e>1.02?" · "+ch.e.toFixed(1).replace(".",",")+"×":"");
-      chCell.append(el("div",{class:"chance",title:"Szansa, że zagra przynajmniej raz"+(ch.e>1.02?"; średnio "+ch.e.toFixed(1).replace(".",",")+" przerwy":"")},m,txt));
+      const m=el("span",{class:"meter"},el("span",{style:"width:"+Math.round(ch.share/maxShare*100)+"%"}));
+      const pct=ch.share*100,txt=(pct<10?pct.toFixed(1):Math.round(pct)).toString().replace(".",",")+"%";
+      chCell.append(el("div",{class:"chance",title:"Szansa na przynajmniej jedną przerwę w tygodniu: "+Math.round(ch.p*100)+"%, średnio "+ch.e.toFixed(1).replace(".",",")+" przerwy"},m,txt));
     }
     const st=p.active===false?el("span",{class:"status st-pause"},"pauza"):inWeek.has(p.id)?el("span",{class:"status st-in"},"w grafiku"):el("span",{class:"status st-wait"},"czeka");
     const nameCell=el("td",null,p.name);if(p.note)nameCell.append(el("div",{class:"note"},"♪ "+p.note));
