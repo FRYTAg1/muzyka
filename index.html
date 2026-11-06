@@ -134,6 +134,98 @@ ol.how{margin:0;padding-left:20px;display:grid;gap:8px}
 .modal{background:var(--paper);border-radius:14px;padding:20px;width:min(420px,100%);display:grid;gap:14px;border:1.5px solid var(--line)}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;font-size:14px;z-index:30;max-width:calc(100% - 32px)}
 .toast[hidden]{display:none}
+
+/* ---------- Na antenie ---------- */
+.live{display:grid;grid-template-columns:auto 1fr auto;gap:6px 22px;align-items:center;background:var(--ink);color:var(--bg);border-radius:16px;padding:18px 22px}
+.live .tag{display:inline-flex;align-items:center;gap:8px;font:700 12px/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:color-mix(in srgb,var(--bg) 70%,transparent)}
+.live .tag i{width:10px;height:10px;border-radius:50%;background:color-mix(in srgb,var(--bg) 40%,transparent)}
+.live.on .tag{color:var(--accent)}
+.live.on .tag i{background:var(--accent)}
+.live .who{font:800 clamp(22px,3vw,30px)/1.1 var(--display)}
+.live .who small{font:500 16px var(--body);opacity:.7;margin-left:8px}
+.live .when{font-size:14px;opacity:.75}
+.live .count{font:800 clamp(24px,3.4vw,34px)/1 var(--display);font-variant-numeric:tabular-nums;text-align:right}
+.live .count span{display:block;font:500 12px var(--body);opacity:.65;margin-top:4px;letter-spacing:.04em}
+.live .eq{display:flex;gap:3px;align-items:flex-end;height:30px}
+.live .eq b{width:5px;border-radius:2px;background:color-mix(in srgb,var(--bg) 35%,transparent);height:30%}
+.live.on .eq b{background:var(--accent)}
+.live.idle .who{font-size:20px}
+@media (max-width:640px){.live{grid-template-columns:auto 1fr}.live .count{grid-column:1/-1;text-align:left}}
+
+/* ---------- dziś w grafiku ---------- */
+table.grid th.today,table.grid td.today{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+table.grid td.today.off{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--accent) 7%,transparent) 0 7px,var(--soft) 7px 8px)}
+.todaychip{display:inline-block;margin-left:6px;font:700 10px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;background:var(--accent);color:var(--accent-ink);padding:3px 6px;border-radius:5px;vertical-align:2px}
+td.cell.mine .who,.dl-item.mine .who{font-weight:700}
+td.cell.mine .who::after,.dl-item.mine .who::after{content:" (Ty)";color:var(--accent);font-weight:700}
+
+/* ---------- widok na telefon ---------- */
+.daylist{display:none;gap:10px}
+@media (max-width:680px){.scroll{display:none}.daylist{display:grid}}
+.dl-day{border:1.5px solid var(--line);border-radius:12px;overflow:hidden}
+.dl-day.today{border-color:var(--accent)}
+.dl-head{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:var(--bg);font-weight:700}
+.dl-head span{font-weight:400;color:var(--muted);font-size:13px}
+.dl-item{display:grid;grid-template-columns:110px 1fr;gap:10px;padding:9px 12px;border-top:1px solid var(--soft);font-variant-numeric:tabular-nums}
+.dl-item .t{color:var(--muted)}
+.dl-item .cls{color:var(--muted);margin-left:6px}
+.dl-item.clickable{cursor:pointer}
+.dl-off{padding:10px 12px;color:var(--muted);border-top:1px solid var(--soft)}
+
+/* ---------- Ty ---------- */
+.mebox{display:grid;gap:10px;padding:14px;border-radius:12px;background:var(--bg);border:1.5px solid var(--soft)}
+.mebox .big{font:800 20px/1.2 var(--display)}
+.mebox ul{margin:0;padding-left:18px}
+.mestats{display:flex;gap:8px;flex-wrap:wrap}
+table.people tr.me td{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.youtag{font:700 10px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;background:var(--accent);color:var(--accent-ink);padding:3px 6px;border-radius:5px;margin-left:6px;vertical-align:2px}
+
+/* ---------- lekkie animacje ---------- */
+@media (prefers-reduced-motion:no-preference){
+  .wrap>*{animation:rise .55s cubic-bezier(.2,.7,.2,1) both}
+  .wrap>*:nth-child(2){animation-delay:.05s}
+  .wrap>*:nth-child(3){animation-delay:.1s}
+  .wrap>*:nth-child(4){animation-delay:.16s}
+  .cols>div>*{animation:rise .55s cubic-bezier(.2,.7,.2,1) both}
+  .cols>div>*:nth-child(2){animation-delay:.08s}
+  .cols>div>*:nth-child(3){animation-delay:.14s}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  .onair i{animation:onair 1.8s ease-in-out infinite}
+  @keyframes onair{0%,100%{box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent)}50%{box-shadow:0 0 0 9px color-mix(in srgb,var(--accent) 0%,transparent)}}
+
+  button{transition:transform .15s ease,background-color .15s ease,box-shadow .15s ease,filter .15s ease}
+  button:not(:disabled):hover{transform:translateY(-1px)}
+  button:not(:disabled):active{transform:translateY(0) scale(.97)}
+  button.primary:not(:disabled):hover{box-shadow:0 6px 16px -8px var(--accent)}
+
+  td.cell{transition:background-color .2s ease}
+  table.people tbody tr{transition:background-color .2s ease}
+  table.people tbody tr:hover{background:color-mix(in srgb,var(--soft) 55%,transparent)}
+  table.people tbody tr.fresh{animation:fresh 1.6s ease-out}
+  @keyframes fresh{0%{background:var(--hl);transform:translateX(-6px)}25%{transform:none}100%{background:transparent}}
+  .meter span{transition:width .6s cubic-bezier(.2,.7,.2,1)}
+  .status{transition:background-color .3s ease,color .3s ease}
+
+  .card,.sheet{transition:box-shadow .25s ease,transform .25s ease}
+  .card:hover{box-shadow:0 12px 28px -20px rgba(0,0,0,.45)}
+
+  .toast:not([hidden]){animation:toastIn .3s cubic-bezier(.2,.7,.2,1)}
+  @keyframes toastIn{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
+  .modal-bg:not([hidden]){animation:fadeIn .2s ease}
+  .modal-bg:not([hidden]) .modal{animation:pop .28s cubic-bezier(.2,.9,.3,1.2)}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes pop{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:none}}
+  .msg.ok{animation:okIn .4s cubic-bezier(.2,.9,.3,1.3)}
+  @keyframes okIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  .live.on .eq b{animation:eq 1s ease-in-out infinite}
+  .live.on .eq b:nth-child(2){animation-delay:-.3s}.live.on .eq b:nth-child(3){animation-delay:-.6s}.live.on .eq b:nth-child(4){animation-delay:-.15s}.live.on .eq b:nth-child(5){animation-delay:-.45s}
+  @keyframes eq{0%,100%{height:25%}50%{height:100%}}
+  .live.on .tag i{animation:onair 1.4s ease-in-out infinite}
+  .note-fx{position:fixed;pointer-events:none;z-index:40;font-size:20px;color:var(--accent);animation:noteUp 1.2s ease-out forwards}
+  @keyframes noteUp{0%{opacity:0;transform:translate(0,0) scale(.6)}15%{opacity:1}100%{opacity:0;transform:translate(var(--dx),-90px) rotate(var(--rot)) scale(1.1)}}
+}
 @media (prefers-reduced-motion:reduce){td.cell.landed{animation:none}}
 </style>
 </head>
@@ -158,9 +250,12 @@ ol.how{margin:0;padding-left:20px;display:grid;gap:8px}
 
   <div class="banner" id="banner" hidden></div>
 
+  <section class="live" id="live" aria-live="polite"></section>
+
   <section class="sheet" aria-labelledby="sheetTitle">
     <div class="sheet-title" id="sheetTitle">Grafik puszczania muzyki na przerwach</div>
     <div class="scroll"><table class="grid" id="grid"></table></div>
+    <div class="daylist" id="dayList"></div>
     <div class="bar" id="adminBar" hidden>
       <button class="primary" id="drawBtn">Losuj wolne miejsca</button>
       <button id="redrawBtn">Losuj wszystko od nowa</button>
@@ -177,6 +272,7 @@ ol.how{margin:0;padding-left:20px;display:grid;gap:8px}
     <div style="display:grid;gap:28px">
       <section class="card" aria-labelledby="joinTitle">
         <h2 id="joinTitle">Zapisz się</h2>
+        <div class="mebox" id="meBox" hidden></div>
         <form id="joinForm" novalidate>
           <label for="fName">Imię i nazwisko
             <input id="fName" autocomplete="name" maxlength="60" required placeholder="np. Jan Kowalski">
@@ -371,7 +467,7 @@ function simulate(){
   maxShare=Math.max(...pool.map(p=>chances[p.id].share));
   simInfo="Procent to udział w losowaniu: jaka część wszystkich losów należy do danej osoby. Razem wszyscy mają 100%.";
 }
-function scheduleSim(){clearTimeout(simTimer);simTimer=setTimeout(()=>{simulate();renderPeople()},120)}
+function scheduleSim(){clearTimeout(simTimer);simTimer=setTimeout(()=>{simulate();renderPeople();renderMe()},120)}
 
 /* ---------- stan ---------- */
 function curWeek(){const w=weeks[weekId];return{off:(w&&Array.isArray(w.off)?w.off.slice(0,5):[false,false,false,false,false]),cells:Object.assign({},(w&&w.cells)||{})}}
@@ -407,9 +503,10 @@ function el(tag,attrs,...kids){const e=document.createElement(tag);if(attrs)for(
 function renderGrid(){
   $("weekLabel").textContent=weekLabel(weekId);
   const w=curWeek(),cells=animCells||w.cells,t=$("grid");t.textContent="";
+  const nowD=new Date(),todayIdx=iso(mondayOf(nowD))===weekId?(nowD.getDay()+6)%7:-1;
   const hr=el("tr",null,el("th",null,weekLabel(weekId)));
   DAYS.forEach((d,i)=>{
-    const th=el("th",null,d,el("span",{class:"daydate"},dm(addDays(weekId,i))));
+    const th=el("th",{class:i===todayIdx?"today":null},d,i===todayIdx?el("span",{class:"todaychip"},"dziś"):null,el("span",{class:"daydate"},dm(addDays(weekId,i))));
     if(canDraw&&!animCells){th.append(el("div",{class:"dayoff"},el("button",{class:"small",onclick:()=>toggleOff(i),disabled:busy},w.off[i]?"Przywróć dzień":"Dzień wolny")))}
     hr.append(th);
   });
@@ -424,6 +521,8 @@ function renderGrid(){
       else if(c)td=el("td",{class:"cell"},el("span",{class:"who"},c.name),el("span",{class:"cls"},c.cls));
       else td=el("td",{class:"cell empty"},el("span",{class:"who"},canDraw?"wolne – kliknij":"—"));
       td.dataset.key=key;
+      if(d===todayIdx)td.classList.add("today");
+      if(c&&me&&c.pid===me&&!animCells)td.classList.add("mine");
       if(canDraw&&!w.off[d]&&!animCells){td.classList.add("clickable");td.tabIndex=0;td.setAttribute("role","button");td.setAttribute("aria-label",DAYS[d]+", "+s+(c?", "+c.name:", wolne"));td.addEventListener("click",()=>openCell(r,d));td.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openCell(r,d)}})}
       tr.append(td);
     }
@@ -437,9 +536,98 @@ function renderGrid(){
     el("span",{class:"chip"},"Obsadzone: ",el("b",null,filled+" / "+open))
   );
   ["drawBtn","redrawBtn","clearBtn"].forEach(id=>$(id).disabled=busy);
+  renderDayList(w,cells,todayIdx);
+  if(!animCells)renderLive();
+}
+function renderDayList(w,cells,todayIdx){
+  const box=$("dayList");box.textContent="";
+  DAYS.forEach((d,i)=>{
+    const card=el("div",{class:"dl-day"+(i===todayIdx?" today":"")},
+      el("div",{class:"dl-head"},el("div",null,d,i===todayIdx?el("span",{class:"todaychip"},"dziś"):null),el("span",null,dm(addDays(weekId,i)))));
+    if(w.off[i])card.append(el("div",{class:"dl-off"},"dzień wolny"));
+    else config.slots.forEach((s,r)=>{
+      const c=cells[r+"-"+i];
+      const it=el("div",{class:"dl-item"+(c&&me&&c.pid===me?" mine":"")},el("span",{class:"t"},s),
+        c?el("span",null,el("span",{class:"who"},c.name),el("span",{class:"cls"},c.cls)):el("span",{class:"muted"},canDraw?"wolne – dotknij":"—"));
+      if(canDraw&&!animCells){it.classList.add("clickable");it.addEventListener("click",()=>openCell(r,i))}
+      card.append(it);
+    });
+    box.append(card);
+  });
+}
+
+/* ---------- Na antenie ---------- */
+function parseSlot(s){const m=String(s).match(/(\d{1,2})[:.](\d{2})\D+(\d{1,2})[:.](\d{2})/);return m?[+m[1]*60+ +m[2],+m[3]*60+ +m[4]]:null}
+function nextBroadcast(now){
+  const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  for(let k=0;k<21;k++){
+    const day=new Date(today);day.setDate(day.getDate()+k);
+    const wd=(day.getDay()+6)%7;if(wd>4)continue;
+    const w=weeks[iso(mondayOf(day))];if(!w||(w.off&&w.off[wd]))continue;
+    const order=config.slots.map((s,r)=>({r,t:parseSlot(s)})).filter(x=>x.t).sort((a,b)=>a.t[0]-b.t[0]);
+    for(const{r,t}of order){
+      const c=(w.cells||{})[r+"-"+wd];if(!c)continue;
+      const st=new Date(day);st.setMinutes(t[0]);const en=new Date(day);en.setMinutes(t[1]);
+      if(en>now)return{c,st,en,live:st<=now,label:config.slots[r],day,k};
+    }
+  }
+  return null;
+}
+function fmtLeft(ms){const m=Math.max(0,Math.ceil(ms/60000));if(m<60)return m+" min";const h=Math.floor(m/60),r=m%60;if(h<24)return h+" h "+(r?r+" min":"");const d=Math.floor(h/24);return d+(d===1?" dzień":" dni")}
+function renderLive(){
+  const box=$("live"),now=new Date(),n=nextBroadcast(now);box.textContent="";
+  const eq=el("div",{class:"eq","aria-hidden":"true"},el("b"),el("b"),el("b"),el("b"),el("b"));
+  if(!n){
+    box.className="live idle";
+    box.append(eq,el("div",null,el("div",{class:"tag"},el("i"),"Radiowęzeł"),el("div",{class:"who"},"Cisza w eterze"),el("div",{class:"when"},"Nie ma jeszcze zaplanowanych przerw. Grafik pojawi się po losowaniu.")));
+    return;
+  }
+  box.className="live"+(n.live?" on":"");
+  const dayTxt=n.k===0?"dziś":n.k===1?"jutro":DAYS[(n.day.getDay()+6)%7]+" "+dm(n.day);
+  const mine=me&&n.c.pid===me;
+  box.append(eq,
+    el("div",null,el("div",{class:"tag"},el("i"),n.live?"Na antenie":"Następna przerwa"),
+      el("div",{class:"who"},(mine?"Ty! ":"")+n.c.name,el("small",null,n.c.cls)),
+      el("div",{class:"when"},dayTxt+", "+n.label)),
+    el("div",{class:"count"},n.live?fmtLeft(n.en-now):fmtLeft(n.st-now),el("span",null,n.live?"do końca przerwy":"do startu")));
+}
+setInterval(()=>{if(!busy)renderLive()},20000);
+
+/* ---------- Ty (zapamiętane na tym urządzeniu) ---------- */
+let me=null;
+try{me=localStorage.getItem("mnp_me")}catch(e){}
+let meSetAt=0;
+function setMe(id){me=id;meSetAt=Date.now();try{id?localStorage.setItem("mnp_me",id):localStorage.removeItem("mnp_me")}catch(e){}}
+function myBreaks(){
+  if(!me)return[];const out=[];
+  const w=curWeek();
+  for(let d=0;d<5;d++)config.slots.forEach((s,r)=>{const c=w.cells[r+"-"+d];if(c&&c.pid===me)out.push(DAYS[d]+" "+dm(addDays(weekId,d))+", "+s)});
+  return out;
+}
+function renderMe(){
+  const box=$("meBox"),p=me&&people.find(x=>x.id===me);
+  /* wpis usunięty przez organizatora: zapominamy go, ale nie w pierwszych sekundach po zapisie, zanim baza odpowie */
+  if(me&&gotPeople&&!p&&rawPeople.length&&Date.now()-meSetAt>15000)setMe(null);
+  const show=!!p&&canWrite;
+  box.hidden=!show;$("joinForm").hidden=!canWrite||show;
+  if(!show)return;
+  box.textContent="";
+  const ch=chances[p.id],br=myBreaks();
+  box.append(
+    el("div",{class:"muted"},"Jesteś zapisany jako"),
+    el("div",{class:"big"},p.name+" ",el("span",{class:"muted",style:"font:500 16px var(--body)"},p.cls)),
+    el("div",{class:"mestats"},
+      el("span",{class:"chip"},"Punkty: ",el("b",null,String(p.points||0))),
+      el("span",{class:"chip"},"Szansa: ",el("b",null,ch?((ch.share*100<10?(ch.share*100).toFixed(1):Math.round(ch.share*100))+"").replace(".",",")+"%":"–")),
+      p.active===false?el("span",{class:"status st-pause"},"pauza"):null),
+    br.length?el("div",null,el("b",null,"Grasz w tygodniu "+weekLabel(weekId)+":"),el("ul",null,...br.map(x=>el("li",null,x))))
+             :el("div",{class:"muted"},"W tygodniu "+weekLabel(weekId)+" nie masz przerwy."),
+    el("button",{class:"small ghost",style:"justify-self:start",onclick:()=>{setMe(null);renderMe()}},"To nie ja")
+  );
 }
 
 /* ---------- render: lista ---------- */
+let seenIds=null,freshAt={};
 function renderPeople(){
   const q=norm($("search").value),w=curWeek(),inWeek=new Set(Object.values(w.cells).map(c=>c.pid));
   const t=$("people");t.textContent="";
@@ -465,7 +653,7 @@ function renderPeople(){
       chCell.append(el("div",{class:"chance",title:"Szansa na przynajmniej jedną przerwę w tygodniu: "+Math.round(ch.p*100)+"%, średnio "+ch.e.toFixed(1).replace(".",",")+" przerwy"},m,txt));
     }
     const st=p.active===false?el("span",{class:"status st-pause"},"pauza"):inWeek.has(p.id)?el("span",{class:"status st-in"},"w grafiku"):el("span",{class:"status st-wait"},"czeka");
-    const nameCell=el("td",null,p.name);if(p.note)nameCell.append(el("div",{class:"note"},"♪ "+p.note));
+    const nameCell=el("td",null,p.name,p.id===me?el("span",{class:"youtag"},"Ty"):null);if(p.note)nameCell.append(el("div",{class:"note"},"♪ "+p.note));
     const tr=el("tr",null,nameCell,el("td",null,p.cls),el("td",{class:"num"},el("span",{class:"pts"},String(pts),dots)),chCell,el("td",null,st));
     if(canDraw){
       tr.append(el("td",null,el("div",{class:"actions"},
@@ -475,9 +663,14 @@ function renderPeople(){
         el("button",{class:"small",onclick:e=>removePerson(p,e.currentTarget)},"Usuń")
       )));
     }
+    if(p.id===me)tr.classList.add("me");
+    if(seenIds&&!seenIds.has(p.id))freshAt[p.id]=Date.now();
+    const age=freshAt[p.id]!=null?Date.now()-freshAt[p.id]:9999;
+    if(age<1600){tr.classList.add("fresh");tr.style.animationDelay=(-age)+"ms"}
     tb.append(tr);
   }
   t.append(tb);
+  if(gotPeople){seenIds=seenIds||new Set();people.forEach(p=>seenIds.add(p.id))}
   $("simInfo").textContent=simInfo;
 }
 
@@ -488,7 +681,7 @@ function renderHistory(){
   ids.slice(0,12).forEach(id=>h.append(el("button",{class:"small"+(id===weekId?" primary":""),onclick:()=>{weekId=id;renderAll()}},weekLabel(id)+" · "+Object.keys(weeks[id].cells).length+" os.")));
 }
 
-function renderAll(){renderGrid();renderPeople();renderHistory();scheduleSim()}
+function renderAll(){renderGrid();renderPeople();renderHistory();renderMe();scheduleSim()}
 
 let isAdmin=false,adminView=true;
 function setMode(){
@@ -527,7 +720,7 @@ $("importBtn").addEventListener("click",async()=>{
 });
 function applyPerms(){
   $("adminBar").hidden=!canDraw;$("adminCard").hidden=!canDraw;
-  $("joinForm").hidden=!canWrite;$("joinLocked").hidden=canWrite;
+  $("joinLocked").hidden=canWrite;
   if(canDraw){$("sSlots").value=config.slots.join("\n");$("sStrength").value=String(config.strength)}
   renderAll();
 }
@@ -622,6 +815,17 @@ async function removePerson(p,btn){
 
 function cleanCls(s){return String(s||"").trim().replace(/\s+/g,"").toLowerCase().slice(0,6)}
 function cleanName(s){return String(s||"").trim().replace(/\s+/g," ").slice(0,60)}
+function burstNotes(target){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  const r=target.getBoundingClientRect(),glyphs=["♪","♫","♬","♩"];
+  for(let i=0;i<8;i++){
+    const n=document.createElement("span");n.className="note-fx";n.textContent=glyphs[i%4];
+    n.style.left=(r.left+r.width*(0.15+0.7*Math.random()))+"px";n.style.top=(r.top+r.height/2-10)+"px";
+    n.style.setProperty("--dx",(Math.random()*80-40)+"px");n.style.setProperty("--rot",(Math.random()*60-30)+"deg");
+    n.style.animationDelay=(i*60)+"ms";
+    document.body.append(n);setTimeout(()=>n.remove(),1600+i*60);
+  }
+}
 function slugName(name){return norm(name).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/ł/g,"l").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,64)}
 /* Identyfikator zapisu = imię i nazwisko bez polskich znaków. Reguły Firebase pozwalają gościowi tylko UTWORZYĆ wpis, więc drugi zapis tej samej osoby serwer odrzuca. */
 async function addPerson(name,cls,note){
@@ -639,7 +843,7 @@ $("joinForm").addEventListener("submit",async e=>{
   const dup=people.find(p=>slugName(p.name)===slugName(name));
   if(dup){msg.className="msg err";msg.textContent=dup.cls===cls?"Już jesteś na liście. Drugi zapis łamie regulamin.":"Osoba o tym imieniu i nazwisku jest już zapisana (klasa "+dup.cls+"). Drugi zapis łamie regulamin. Jeśli to pomyłka, napisz do organizatora.";return}
   $("joinBtn").disabled=true;
-  try{await addPerson(name,cls,note);msg.className="msg ok";msg.textContent="Zapisano! Powodzenia w losowaniu.";$("joinForm").reset()}
+  try{await addPerson(name,cls,note);if(!isAdmin)setMe(slugName(name));msg.className="msg ok";msg.textContent="Zapisano! Powodzenia w losowaniu.";$("joinForm").reset();burstNotes($("joinBtn"))}
   catch(err){msg.className="msg err";msg.textContent=err&&err.code==="permission-denied"?"Ta osoba jest już zapisana. Drugi zapis łamie regulamin.":"Nie udało się zapisać. Sprawdź internet i spróbuj jeszcze raz."}
   finally{$("joinBtn").disabled=false}
 });
