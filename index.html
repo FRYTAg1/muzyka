@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Muzyka na przerwach</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Szkolny radiowęzeł: tablica ogłoszeń z czarną kratką jak w papierowym grafiku, czerwona lampka ON AIR jako jedyny akcent */
+  --bg:#f3f4f1; --paper:#ffffff; --ink:#15171c; --muted:#5d6570; --line:#1b1e24; --soft:#e2e5df;
+  --accent:#d42d2d; --accent-ink:#ffffff; --hl:#fff1bd; --ok:#1d7448; --warn:#9a6a00;
+  --display:"Bricolage Grotesque","Arial Narrow",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#111317; --paper:#1a1d22; --ink:#eceee9; --muted:#9ba2ab; --line:#cfd3cc; --soft:#2a2e35;
+    --accent:#ff5b50; --accent-ink:#1b0505; --hl:#3b3418; --ok:#55c78f; --warn:#e0b44a; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111317; --paper:#1a1d22; --ink:#eceee9; --muted:#9ba2ab; --line:#cfd3cc; --soft:#2a2e35;
+  --accent:#ff5b50; --accent-ink:#1b0505; --hl:#3b3418; --ok:#55c78f; --warn:#e0b44a; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto;padding:28px 20px 64px;display:grid;gap:28px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:clamp(28px,4.4vw,44px);font-weight:800;letter-spacing:-.01em}
+h2{font-size:24px;font-weight:800}
+h3{font-size:17px;font-weight:600}
+p{margin:0}
+.muted{color:var(--muted)}
+.top{display:flex;flex-wrap:wrap;gap:14px 24px;align-items:flex-end;justify-content:space-between}
+.onair{display:inline-flex;align-items:center;gap:8px;font:700 12px/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.onair i{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent)}
+.weeknav{display:flex;align-items:center;gap:8px}
+.weeknav .lbl{font:600 18px/1 var(--display);min-width:210px;text-align:center;font-variant-numeric:tabular-nums}
+button,.btn{font:600 15px/1 var(--body);border-radius:10px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink);padding:10px 14px;cursor:pointer}
+button:hover{background:var(--soft)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button.primary:hover{filter:brightness(1.08);background:var(--accent)}
+button.small{padding:6px 10px;font-size:13px;border-radius:8px}
+button.icon{padding:8px 12px}
+button.ghost{border-color:transparent;background:transparent}
+button.ghost:hover{background:var(--soft)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;gap:6px;align-items:center;padding:5px 11px;border-radius:999px;background:var(--paper);border:1px solid var(--soft);font-size:14px}
+.chip b{font-variant-numeric:tabular-nums}
+.role{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;padding:6px 12px;border-radius:999px}
+.role-admin{background:var(--ink);color:var(--bg)}
+.role-admin i{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.role-guest{background:var(--soft);color:var(--muted)}
+.banner{padding:12px 16px;border-radius:12px;background:var(--hl);border:1px solid color-mix(in srgb,var(--warn) 40%,transparent)}
+.banner[hidden]{display:none}
+
+/* Grafik */
+.sheet{background:var(--paper);border-radius:14px;padding:22px;box-shadow:0 1px 0 var(--soft),0 10px 30px -18px rgba(0,0,0,.35);display:grid;gap:16px}
+.sheet-title{font-family:Arial,Helvetica,sans-serif;font-size:clamp(22px,3.2vw,32px);font-weight:400;text-align:center}
+.scroll{overflow-x:auto}
+table.grid{border-collapse:collapse;width:100%;min-width:760px;font-family:Arial,Helvetica,sans-serif;font-size:15px}
+table.grid th,table.grid td{border:1.5px solid var(--line);padding:10px 10px;vertical-align:top;text-align:left}
+table.grid thead th{font-weight:400;white-space:nowrap}
+table.grid thead th .daydate{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+table.grid tbody th{font-weight:400;white-space:nowrap;font-variant-numeric:tabular-nums;width:130px}
+td.cell{height:64px;min-width:120px;position:relative}
+td.cell .who{display:block}
+td.cell .cls{color:var(--muted)}
+td.cell.empty .who{color:var(--muted)}
+td.cell.off{background:repeating-linear-gradient(135deg,transparent 0 7px,var(--soft) 7px 8px)}
+td.cell.clickable{cursor:pointer}
+td.cell.clickable:hover{background:var(--hl)}
+td.cell.rolling .who{color:var(--accent);font-weight:700}
+td.cell.landed{animation:land .7s ease-out}
+@keyframes land{0%{background:var(--hl)}100%{background:transparent}}
+.dayoff{margin-top:6px}
+.legend{font-size:13px}
+
+/* Sekcje */
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:28px;align-items:start}
+@media (max-width:860px){.cols{grid-template-columns:1fr}}
+.card{background:var(--paper);border-radius:14px;padding:20px;display:grid;gap:14px;border:1px solid var(--soft)}
+form{display:grid;gap:12px}
+label{display:grid;gap:5px;font-weight:600;font-size:14px}
+label .hint{font-weight:400;color:var(--muted)}
+input,select,textarea{font:inherit;font-weight:400;color:var(--ink);background:var(--bg);border:1.5px solid var(--soft);border-radius:9px;padding:9px 11px;width:100%}
+textarea{min-height:110px;resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 110px;gap:10px}
+.rules{border-left:4px solid var(--accent);background:var(--bg);border-radius:0 10px 10px 0;padding:12px 14px;display:grid;gap:6px;font-size:14px}
+.rules h3{font-size:15px;color:var(--accent)}
+.rules ol{margin:0;padding-left:18px;display:grid;gap:4px}
+label.check{display:flex;gap:10px;align-items:flex-start;font-weight:500}
+label.check input{width:18px;height:18px;margin-top:2px;flex:none;accent-color:var(--accent)}
+.msg{font-size:14px;min-height:1.5em}
+.msg.ok{color:var(--ok)} .msg.err{color:var(--accent)}
+
+table.people{border-collapse:collapse;width:100%;font-size:15px}
+table.people th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;text-align:left;padding:6px 8px;border-bottom:1.5px solid var(--line)}
+table.people td{padding:9px 8px;border-bottom:1px solid var(--soft);vertical-align:middle}
+table.people td.num{font-variant-numeric:tabular-nums;text-align:right}
+table.people th.num{text-align:right}
+.pts{display:inline-flex;align-items:center;gap:4px}
+.dots{display:inline-flex;gap:3px;margin-left:6px;vertical-align:middle}
+.dots i{width:7px;height:7px;border-radius:50%;background:var(--ink);opacity:.75}
+.chance{display:flex;align-items:center;gap:8px;justify-content:flex-end;white-space:nowrap}
+.meter{width:70px;height:7px;border-radius:5px;background:var(--soft);overflow:hidden}
+.meter span{display:block;height:100%;background:var(--accent)}
+.status{font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.st-in{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+.st-wait{background:var(--soft);color:var(--muted)}
+.st-pause{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.note{font-size:13px;color:var(--muted)}
+.actions{display:flex;gap:4px;justify-content:flex-end;flex-wrap:nowrap}
+.empty-state{padding:18px;text-align:center;color:var(--muted)}
+.scroll-y{overflow-x:auto}
+
+ol.how{margin:0;padding-left:20px;display:grid;gap:8px}
+.formula{font-family:ui-monospace,Consolas,monospace;background:var(--bg);padding:2px 6px;border-radius:6px}
+.history{display:flex;flex-wrap:wrap;gap:8px}
+
+/* Okno edycji komórki */
+.modal-bg{position:fixed;inset:0;background:rgba(10,12,15,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+.modal-bg[hidden]{display:none}
+.modal{background:var(--paper);border-radius:14px;padding:20px;width:min(420px,100%);display:grid;gap:14px;border:1.5px solid var(--line)}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;font-size:14px;z-index:30;max-width:calc(100% - 32px)}
+.toast[hidden]{display:none}
+@media (prefers-reduced-motion:reduce){td.cell.landed{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <div class="onair"><i></i>Radiowęzeł</div>
+      <h1>Muzyka na przerwach</h1>
+      <p class="muted">Zapisz się, a losowanie co tydzień ułoży grafik. Kto grał mniej razy, ma większą szansę.</p>
+    </div>
+    <div style="display:grid;gap:10px;justify-items:end">
+    <div class="bar" id="roleBadge"><span class="role role-guest">Gość</span></div>
+    <div class="weeknav" aria-label="Wybór tygodnia">
+      <button class="icon" id="prevWeek" aria-label="Poprzedni tydzień">‹</button>
+      <div class="lbl" id="weekLabel">—</div>
+      <button class="icon" id="nextWeek" aria-label="Następny tydzień">›</button>
+    </div>
+    </div>
+  </header>
+
+  <div class="banner" id="banner" hidden></div>
+
+  <section class="sheet" aria-labelledby="sheetTitle">
+    <div class="sheet-title" id="sheetTitle">Grafik puszczania muzyki na przerwach</div>
+    <div class="scroll"><table class="grid" id="grid"></table></div>
+    <div class="bar" id="adminBar" hidden>
+      <button class="primary" id="drawBtn">Losuj wolne miejsca</button>
+      <button id="redrawBtn">Losuj wszystko od nowa</button>
+      <button id="clearBtn">Wyczyść tydzień</button>
+      <span class="muted legend">Kliknij miejsce w tabeli, żeby je zmienić. Przycisk pod dniem ustawia dzień wolny.</span>
+    </div>
+    <div class="bar">
+      <button id="copyBtn">Kopiuj grafik jako tekst</button>
+      <div class="chips" id="stats"></div>
+    </div>
+  </section>
+
+  <div class="cols">
+    <div style="display:grid;gap:28px">
+      <section class="card" aria-labelledby="joinTitle">
+        <h2 id="joinTitle">Zapisz się</h2>
+        <form id="joinForm" novalidate>
+          <label for="fName">Imię i nazwisko
+            <input id="fName" autocomplete="name" maxlength="60" required placeholder="np. Julia Janiak">
+          </label>
+          <div class="row2">
+            <label for="fNote">Co chcesz puścić? <span class="hint">(opcjonalnie)</span>
+              <input id="fNote" maxlength="80" placeholder="np. rap, pop, playlista na Spotify">
+            </label>
+            <label for="fCls">Klasa
+              <input id="fCls" maxlength="6" required placeholder="2e">
+            </label>
+          </div>
+          <div class="rules" id="rules">
+            <h3>Regulamin zapisów</h3>
+            <ol>
+              <li>Jedna osoba może zapisać się <b>tylko raz</b>.</li>
+              <li>Zapisanie się drugi raz, np. z inną pisownią, inną klasą albo przez kolegę, <b>łamie regulamin</b>.</li>
+              <li>Nie zapisuj innych osób bez ich zgody i nie wpisuj zmyślonych imion.</li>
+              <li>Za złamanie regulaminu organizator usuwa wszystkie twoje zapisy i może wykluczyć cię z losowania.</li>
+            </ol>
+          </div>
+          <label class="check" for="fRules"><input type="checkbox" id="fRules" required> Zapoznałem/am się z regulaminem i zapisuję tylko siebie</label>
+          <button class="primary" type="submit" id="joinBtn">Zapisz mnie</button>
+          <div class="msg" id="joinMsg" role="status" aria-live="polite"></div>
+        </form>
+        <p class="muted" id="joinLocked" hidden>Zapisy prowadzi organizator. Napisz do niego, a dopisze cię do listy.</p>
+      </section>
+
+      <section class="card" aria-labelledby="howTitle" id="howCard">
+        <h2 id="howTitle">Jak działa losowanie</h2>
+        <ol class="how">
+          <li>Każde wylosowanie to <b>+1 punkt</b> dla tej osoby.</li>
+          <li>Szansa zależy od punktów: waga = <span class="formula" id="formula">1 / (1 + punkty)²</span>. Osoba z 0 pkt ma 4 razy większą wagę niż ktoś z 1 pkt, ale los dalej decyduje.</li>
+          <li>W jednym tygodniu nikt nie gra drugi raz, dopóki każdy nie zagrał raz. Gdy miejsc jest więcej niż osób, dodatkowe przerwy rozkładają się po równo, nigdy dwa razy tego samego dnia.</li>
+          <li>Kolumna „Szansa” to wynik 1500 próbnych losowań na obecnych punktach. Liczba z „×” mówi, ile przerw średnio dostanie dana osoba.</li>
+        </ol>
+      </section>
+
+      <section class="card" id="adminCard" aria-labelledby="adminTitle" hidden>
+        <h2 id="adminTitle">Ustawienia organizatora</h2>
+        <div class="banner" id="importBox" hidden>
+          <p style="margin-bottom:10px">Baza jest pusta. Przenieś osoby, punkty i grafik ze starej strony na claude.ai.</p>
+          <button class="primary" id="importBtn">Przenieś dane ze starej strony</button>
+        </div>
+        <label for="sSlots">Przerwy z muzyką <span class="hint">(jedna na linię)</span>
+          <textarea id="sSlots" style="min-height:80px"></textarea>
+        </label>
+        <label for="sStrength">Siła priorytetu dla osób z mniejszą liczbą punktów
+          <select id="sStrength">
+            <option value="0">Brak, wszyscy mają równe szanse</option>
+            <option value="1">Lekka</option>
+            <option value="2">Średnia</option>
+            <option value="3">Mocna</option>
+          </select>
+        </label>
+        <button id="saveCfg">Zapisz ustawienia</button>
+        <hr style="border:none;border-top:1px solid var(--soft);width:100%;margin:4px 0">
+        <label for="bulk">Dopisz wiele osób naraz <span class="hint">(każda w nowej linii: imię nazwisko klasa)</span>
+          <textarea id="bulk" placeholder="Adam Kubacki 2d&#10;Natasza Basińska 3c"></textarea>
+        </label>
+        <button id="bulkBtn">Dopisz do listy</button>
+        <div class="msg" id="adminMsg" role="status" aria-live="polite"></div>
+      </section>
+    </div>
+
+    <div style="display:grid;gap:28px">
+      <section class="card" aria-labelledby="listTitle">
+        <div class="bar" style="justify-content:space-between">
+          <h2 id="listTitle">Zapisani</h2>
+          <input id="search" placeholder="Szukaj osoby lub klasy" style="max-width:220px" aria-label="Szukaj osoby lub klasy">
+        </div>
+        <div class="scroll-y"><table class="people" id="people"></table></div>
+        <p class="note" id="simInfo"></p>
+      </section>
+
+      <section class="card" aria-labelledby="histTitle">
+        <h2 id="histTitle">Historia tygodni</h2>
+        <div class="history" id="history"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <h3 id="mTitle"></h3>
+    <p id="mWho"></p>
+    <button class="primary" id="mReroll">Wylosuj ponownie to miejsce</button>
+    <label for="mPick">Albo wybierz ręcznie
+      <select id="mPick"></select>
+    </label>
+    <div class="bar">
+      <button id="mSet">Ustaw wybraną osobę</button>
+      <button id="mClear">Opróżnij miejsce</button>
+      <button class="ghost" id="mClose">Zamknij</button>
+    </div>
+  </div>
+</div>
+<div class="modal-bg" id="loginBg" hidden>
+  <form class="modal" id="loginForm" role="dialog" aria-modal="true" aria-labelledby="lTitle" novalidate>
+    <h3 id="lTitle">Panel organizatora</h3>
+    <p class="muted">Wpisz wspólne hasło organizatorów. Goście nie muszą się logować.</p>
+    <input type="text" name="username" autocomplete="username" value="organizator@muzyka-na-przerwach.pl" hidden>
+    <label for="lPass">Hasło<input id="lPass" type="password" autocomplete="current-password" required></label>
+    <div class="bar"><button class="primary" type="submit" id="lBtn">Zaloguj</button><button class="ghost" type="button" id="lClose">Anuluj</button></div>
+    <div class="msg" id="lMsg" role="status" aria-live="polite"></div>
+  </form>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script type="module">
+/* ===== KROK 4 INSTRUKCJI: zamień cały ten blok na konfigurację z konsoli Firebase ===== */
+const firebaseConfig = {
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: ""
+};
+/* ===== koniec bloku do podmiany ===== */
+const ADMIN_EMAIL = "organizator@muzyka-na-przerwach.pl";
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+const FB={doc,collection,onSnapshot,setDoc,updateDoc,writeBatch,serverTimestamp};
+const SEED={"config":{"slots":["9:35 – 9:45","12:10 – 12:30","13:15 – 13:30"],"strength":2},"people":[{"id":"adam-kubacki","name":"Adam Kubacki","cls":"2d","points":1},{"id":"ewa-walkowiak","name":"Ewa Walkowiak","cls":"2e","points":2},{"id":"filip-kulpa","name":"Filip Kulpa","cls":"2c","points":2},{"id":"izabela-krygier","name":"Izabela Krygier","cls":"3c","points":1},{"id":"julia-janiak","name":"Julia Janiak","cls":"2e","points":2},{"id":"krzysztof-bakowski","name":"Krzysztof Bąkowski","cls":"4c","points":2},{"id":"natasza-basinska","name":"Natasza Basińska","cls":"3c","points":2},{"id":"zuzanna-kuzniewska","name":"Zuzanna Kuźniewska","cls":"2g","points":1},{"id":"jan-zawadzki","name":"Jan Zawadzki","cls":"2a","points":1}],"weeks":{"2026-11-02":{"monday":"2026-11-02","off":[true,false,false,false,false],"cells":{"0-1":{"pid":"julia-janiak","name":"Julia Janiak","cls":"2e"},"0-2":{"pid":"adam-kubacki","name":"Adam Kubacki","cls":"2d"},"0-3":{"pid":"natasza-basinska","name":"Natasza Basińska","cls":"3c"},"0-4":{"pid":"krzysztof-bakowski","name":"Krzysztof Bąkowski","cls":"4c"},"1-1":{"pid":"ewa-walkowiak","name":"Ewa Walkowiak","cls":"2e"},"1-2":{"pid":"filip-kulpa","name":"Filip Kulpa","cls":"2c"},"1-3":{"pid":"izabela-krygier","name":"Izabela Krygier","cls":"3c"},"1-4":{"pid":"zuzanna-kuzniewska","name":"Zuzanna Kuźniewska","cls":"2g"}}},"2026-11-09":{"monday":"2026-11-09","off":[false,false,true,true,true],"cells":{"0-0":{"pid":"ewa-walkowiak","name":"Ewa Walkowiak","cls":"2e"},"0-1":{"pid":"natasza-basinska","name":"Natasza Basińska","cls":"3c"},"1-0":{"pid":"krzysztof-bakowski","name":"Krzysztof Bąkowski","cls":"4c"},"1-1":{"pid":"jan-zawadzki","name":"Jan Zawadzki","cls":"2a"},"2-0":{"pid":"julia-janiak","name":"Julia Janiak","cls":"2e"},"2-1":{"pid":"filip-kulpa","name":"Filip Kulpa","cls":"2c"}}}}};
+let fs=null,auth=null;
+const DAYS=["poniedziałek","wtorek","środa","czwartek","piątek"];
+const DEFAULT_SLOTS=["9:35 – 9:45","12:10 – 12:30"];
+const $=id=>document.getElementById(id);
+
+let canWrite=false,canDraw=false;
+let people=[],weeks={},config={slots:DEFAULT_SLOTS.slice(),strength:2};
+let weekId=defaultWeekId();
+let busy=false,animCells=null,animKey=null,chances={},simTimer=null;
+let gotPeople=false,gotWeeks=false;
+
+/* ---------- daty ---------- */
+function mondayOf(d){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-((x.getDay()+6)%7));return x}
+function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function parseIso(s){const[a,b,c]=s.split("-").map(Number);return new Date(a,b-1,c)}
+function addDays(s,n){const d=parseIso(s);d.setDate(d.getDate()+n);return d}
+function dm(d){return String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0")}
+function defaultWeekId(){const n=new Date(),wd=(n.getDay()+6)%7,m=mondayOf(n);if(wd>=5||(wd===4&&n.getHours()>=15))m.setDate(m.getDate()+7);return iso(m)}
+function weekLabel(id){const f=addDays(id,4);return dm(parseIso(id))+" – "+dm(f)+" "+f.getFullYear()}
+
+/* ---------- losowanie (czysta funkcja) ---------- */
+function weight(p,s){return 1/Math.pow(1+Math.max(0,p),s)}
+function drawCells({pool,points,cells,off,rows,strength,rng=Math.random}){
+  const out=Object.assign({},cells),pts=Object.assign({},points),count={};
+  Object.values(out).forEach(c=>count[c.pid]=(count[c.pid]||0)+1);
+  const order=[];
+  for(let d=0;d<5;d++){if(off[d])continue;for(let r=0;r<rows;r++){if(!out[r+"-"+d])order.push([r,d])}}
+  for(const[r,d]of order){
+    if(!pool.length)break;
+    const sameDay=new Set();for(let k=0;k<rows;k++){const c=out[k+"-"+d];if(c)sameDay.add(c.pid)}
+    let cand=pool.filter(p=>!sameDay.has(p.id));
+    if(!cand.length)cand=pool.slice();
+    /* najpierw osoby, które w tym tygodniu grają najmniej razy: nikt nie dostaje 3. przerwy, zanim każdy ma 2 */
+    const minC=Math.min(...cand.map(p=>count[p.id]||0));
+    cand=cand.filter(p=>(count[p.id]||0)===minC);
+    const ws=cand.map(p=>weight(pts[p.id]||0,strength));
+    let t=rng()*ws.reduce((a,b)=>a+b,0),pick=cand[cand.length-1];
+    for(let i=0;i<cand.length;i++){t-=ws[i];if(t<=0){pick=cand[i];break}}
+    out[r+"-"+d]={pid:pick.id,name:pick.name,cls:pick.cls};count[pick.id]=(count[pick.id]||0)+1;pts[pick.id]=(pts[pick.id]||0)+1;
+  }
+  return{cells:out,order};
+}
+let simInfo="";
+function simulate(){
+  const pool=activePool(),w=curWeek(),rows=config.slots.length,n=1500,cnt={},tot={};
+  const pts={};pool.forEach(p=>pts[p.id]=p.points||0);
+  chances={};
+  if(!pool.length){simInfo="";return}
+  /* Jeśli w oglądanym tygodniu są wolne miejsca, liczymy szansę na nie. Jeśli wszystko obsadzone, liczymy dla kolejnego, pustego tygodnia. */
+  let openSlots=0;for(let d=0;d<5;d++){if(w.off[d])continue;for(let r=0;r<rows;r++)if(!w.cells[r+"-"+d])openSlots++}
+  const useCur=openSlots>0,base=useCur?w.cells:{},off=useCur?w.off:[false,false,false,false,false];
+  const slots=useCur?openSlots:5*rows;
+  simInfo=useCur?"Szansa na "+slots+" wolne miejsca w tygodniu "+weekLabel(weekId)+"."
+                :"Ten tydzień jest obsadzony, więc szansa liczona jest dla następnego pełnego tygodnia ("+slots+" miejsc).";
+  for(let i=0;i<n;i++){
+    const{cells,order}=drawCells({pool,points:pts,cells:base,off,rows,strength:config.strength});
+    const seen=new Set();
+    for(const[r,d]of order){const id=cells[r+"-"+d].pid;tot[id]=(tot[id]||0)+1;seen.add(id)}
+    seen.forEach(id=>cnt[id]=(cnt[id]||0)+1);
+  }
+  pool.forEach(p=>chances[p.id]={p:(cnt[p.id]||0)/n,e:(tot[p.id]||0)/n});
+  if(slots>=pool.length)simInfo+=" Miejsc jest więcej niż osób, więc każdy gra przynajmniej raz. Liczy się, kto zagra więcej razy.";
+}
+function scheduleSim(){clearTimeout(simTimer);simTimer=setTimeout(()=>{simulate();renderPeople()},120)}
+
+/* ---------- stan ---------- */
+function curWeek(){const w=weeks[weekId];return{off:(w&&Array.isArray(w.off)?w.off.slice(0,5):[false,false,false,false,false]),cells:Object.assign({},(w&&w.cells)||{})}}
+function activePool(){return people.filter(p=>p.active!==false)}
+function norm(s){return String(s||"").trim().replace(/\s+/g," ").toLowerCase()}
+function diffCells(a,b){const d={};for(const c of Object.values(a))d[c.pid]=(d[c.pid]||0)-1;for(const c of Object.values(b))d[c.pid]=(d[c.pid]||0)+1;return d}
+
+function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,3200)}
+function writeError(e){
+  if(e&&e.code==="permission-denied")toast("Brak uprawnień. Zaloguj się jako organizator.");
+  else if(e&&e.code==="resource-exhausted")toast("Limit bazy wyczerpany na dziś. Spróbuj jutro.");
+  else toast("Nie udało się zapisać. Sprawdź internet i spróbuj jeszcze raz.");
+}
+
+let pointsMap={},rawPeople=[];
+function mergePeople(){
+  people=rawPeople.map(p=>Object.assign({},p,{points:pointsMap[p.id]!=null?pointsMap[p.id]:0}));
+}
+/* Grafik i punkty zapisują się razem w jednej paczce: albo wszystko, albo nic */
+async function saveWeek(off,cells){
+  const w=curWeek(),delta=diffCells(w.cells,cells),b=FB.writeBatch(fs);
+  b.set(FB.doc(fs,"weeks",weekId),{monday:weekId,off,cells,updatedAt:Date.now()});
+  for(const[pid,dv]of Object.entries(delta)){
+    if(!dv)continue;const p=people.find(x=>x.id===pid);if(!p)continue;
+    b.set(FB.doc(fs,"points",pid),{points:Math.max(0,(p.points||0)+dv)});
+  }
+  await b.commit();
+}
+
+/* ---------- render: grafik ---------- */
+function el(tag,attrs,...kids){const e=document.createElement(tag);if(attrs)for(const[k,v]of Object.entries(attrs)){if(k==="class")e.className=v;else if(k.startsWith("on"))e.addEventListener(k.slice(2),v);else if(v!==false&&v!=null)e.setAttribute(k,v===true?"":v)}for(const k of kids)if(k!=null)e.append(k);return e}
+
+function renderGrid(){
+  $("weekLabel").textContent=weekLabel(weekId);
+  const w=curWeek(),cells=animCells||w.cells,t=$("grid");t.textContent="";
+  const hr=el("tr",null,el("th",null,weekLabel(weekId)));
+  DAYS.forEach((d,i)=>{
+    const th=el("th",null,d,el("span",{class:"daydate"},dm(addDays(weekId,i))));
+    if(canDraw&&!animCells){th.append(el("div",{class:"dayoff"},el("button",{class:"small",onclick:()=>toggleOff(i),disabled:busy},w.off[i]?"Przywróć dzień":"Dzień wolny")))}
+    hr.append(th);
+  });
+  t.append(el("thead",null,hr));
+  const tb=el("tbody");
+  config.slots.forEach((s,r)=>{
+    const tr=el("tr",null,el("th",{scope:"row"},s));
+    for(let d=0;d<5;d++){
+      const key=r+"-"+d,c=cells[key];
+      let td;
+      if(w.off[d])td=el("td",{class:"cell off"},el("span",{class:"who"},"dzień wolny"));
+      else if(c)td=el("td",{class:"cell"},el("span",{class:"who"},c.name),el("span",{class:"cls"},c.cls));
+      else td=el("td",{class:"cell empty"},el("span",{class:"who"},canDraw?"wolne – kliknij":"—"));
+      td.dataset.key=key;
+      if(canDraw&&!w.off[d]&&!animCells){td.classList.add("clickable");td.tabIndex=0;td.setAttribute("role","button");td.setAttribute("aria-label",DAYS[d]+", "+s+(c?", "+c.name:", wolne"));td.addEventListener("click",()=>openCell(r,d));td.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openCell(r,d)}})}
+      tr.append(td);
+    }
+    tb.append(tr);
+  });
+  t.append(tb);
+  const filled=Object.keys(w.cells).length,open=w.off.filter(x=>!x).length*config.slots.length;
+  $("stats").textContent="";
+  $("stats").append(
+    el("span",{class:"chip"},"Zapisani: ",el("b",null,String(activePool().length))),
+    el("span",{class:"chip"},"Obsadzone: ",el("b",null,filled+" / "+open))
+  );
+  ["drawBtn","redrawBtn","clearBtn"].forEach(id=>$(id).disabled=busy);
+}
+
+/* ---------- render: lista ---------- */
+function renderPeople(){
+  const q=norm($("search").value),w=curWeek(),inWeek=new Set(Object.values(w.cells).map(c=>c.pid));
+  const t=$("people");t.textContent="";
+  const head=el("tr",null,el("th",null,"Osoba"),el("th",null,"Klasa"),el("th",{class:"num"},"Punkty"),el("th",{class:"num"},"Szansa"),el("th",null,"Status"));
+  if(canDraw)head.append(el("th",{class:"num"},""));
+  t.append(el("thead",null,head));
+  const tb=el("tbody");
+  const list=people.filter(p=>!q||norm(p.name).includes(q)||norm(p.cls).includes(q))
+    .sort((a,b)=>(a.active===false)-(b.active===false)||(a.points||0)-(b.points||0)||a.name.localeCompare(b.name,"pl"));
+  if(!list.length){
+    const td=el("td",{colspan:canDraw?6:5,class:"empty-state"},people.length?"Nikt nie pasuje do wyszukiwania.":(gotPeople?"Nikt się jeszcze nie zapisał. Bądź pierwszy!":"Ładuję listę…"));
+    tb.append(el("tr",null,td));
+  }
+  for(const p of list){
+    const pts=p.points||0,dots=el("span",{class:"dots","aria-hidden":"true"});
+    for(let i=0;i<Math.min(pts,8);i++)dots.append(el("i"));
+    const ch=p.active===false?null:chances[p.id];
+    const chCell=el("td",{class:"num"});
+    if(ch==null)chCell.append("–");
+    else{
+      const m=el("span",{class:"meter"},el("span",{style:"width:"+Math.round(ch.p*100)+"%"}));
+      const txt=Math.round(ch.p*100)+"%"+(ch.e>1.02?" · "+ch.e.toFixed(1).replace(".",",")+"×":"");
+      chCell.append(el("div",{class:"chance",title:"Szansa, że zagra przynajmniej raz"+(ch.e>1.02?"; średnio "+ch.e.toFixed(1).replace(".",",")+" przerwy":"")},m,txt));
+    }
+    const st=p.active===false?el("span",{class:"status st-pause"},"pauza"):inWeek.has(p.id)?el("span",{class:"status st-in"},"w grafiku"):el("span",{class:"status st-wait"},"czeka");
+    const nameCell=el("td",null,p.name);if(p.note)nameCell.append(el("div",{class:"note"},"♪ "+p.note));
+    const tr=el("tr",null,nameCell,el("td",null,p.cls),el("td",{class:"num"},el("span",{class:"pts"},String(pts),dots)),chCell,el("td",null,st));
+    if(canDraw){
+      tr.append(el("td",null,el("div",{class:"actions"},
+        el("button",{class:"small ghost",title:"Odejmij punkt","aria-label":"Odejmij punkt: "+p.name,onclick:()=>bump(p,-1)},"−"),
+        el("button",{class:"small ghost",title:"Dodaj punkt","aria-label":"Dodaj punkt: "+p.name,onclick:()=>bump(p,1)},"+"),
+        el("button",{class:"small",onclick:()=>togglePause(p)},p.active===false?"Wznów":"Pauza"),
+        el("button",{class:"small",onclick:e=>removePerson(p,e.currentTarget)},"Usuń")
+      )));
+    }
+    tb.append(tr);
+  }
+  t.append(tb);
+  $("simInfo").textContent=simInfo;
+}
+
+function renderHistory(){
+  const h=$("history");h.textContent="";
+  const ids=Object.keys(weeks).filter(id=>Object.keys(weeks[id].cells||{}).length).sort().reverse();
+  if(!ids.length){h.append(el("p",{class:"muted"},gotWeeks?"Jeszcze nie było żadnego losowania.":"Ładuję…"));return}
+  ids.slice(0,12).forEach(id=>h.append(el("button",{class:"small"+(id===weekId?" primary":""),onclick:()=>{weekId=id;renderAll()}},weekLabel(id)+" · "+Object.keys(weeks[id].cells).length+" os.")));
+}
+
+function renderAll(){renderGrid();renderPeople();renderHistory();scheduleSim()}
+
+let isAdmin=false,adminView=true;
+function setMode(){
+  canDraw=isAdmin&&adminView;
+  canWrite=!!fs;
+  const b=$("roleBadge");b.textContent="";
+  if(isAdmin){
+    b.append(el("span",{class:"role role-admin"},el("i"),adminView?"Organizator":"Podgląd gościa"),
+      el("button",{class:"small",onclick:()=>{adminView=!adminView;setMode()}},adminView?"Zobacz jako gość":"Wróć do panelu"),
+      el("button",{class:"small",onclick:async()=>{try{await signOut(auth);toast("Wylogowano.")}catch(e){toast("Nie udało się wylogować.")}}},"Wyloguj"));
+  }else{
+    b.append(el("span",{class:"role role-guest"},"Gość"),el("button",{class:"small",onclick:openLogin,disabled:!auth},"Panel organizatora"));
+  }
+  $("importBox").hidden=!(canDraw&&gotPeople&&rawPeople.length===0);
+  applyPerms();
+}
+function openLogin(){$("loginBg").hidden=false;$("lMsg").textContent="";$("lPass").value="";$("lPass").focus()}
+function closeLogin(){$("loginBg").hidden=true}
+$("lClose").addEventListener("click",closeLogin);
+$("loginBg").addEventListener("click",e=>{if(e.target===$("loginBg"))closeLogin()});
+$("loginForm").addEventListener("submit",async e=>{
+  e.preventDefault();const m=$("lMsg");m.className="msg";
+  const pw=$("lPass").value;if(!pw){m.className="msg err";m.textContent="Wpisz hasło.";return}
+  $("lBtn").disabled=true;m.textContent="Sprawdzam…";
+  try{await signInWithEmailAndPassword(auth,ADMIN_EMAIL,pw);closeLogin();toast("Zalogowano jako organizator.")}
+  catch(err){m.className="msg err";m.textContent=err&&err.code==="auth/too-many-requests"?"Za dużo prób. Odczekaj kilka minut.":err&&err.code==="auth/network-request-failed"?"Brak internetu.":"Złe hasło."}
+  finally{$("lBtn").disabled=false}
+});
+$("importBtn").addEventListener("click",async()=>{
+  const b=writeBatch(fs);
+  b.set(doc(fs,"config","main"),SEED.config);
+  for(const p of SEED.people){b.set(doc(fs,"people",p.id),{name:p.name,cls:p.cls,note:"",active:true,createdAt:serverTimestamp()});b.set(doc(fs,"points",p.id),{points:p.points})}
+  for(const[id,w]of Object.entries(SEED.weeks))b.set(doc(fs,"weeks",id),Object.assign({},w,{updatedAt:Date.now()}));
+  $("importBtn").disabled=true;
+  try{await b.commit();toast("Dane przeniesione: "+SEED.people.length+" osób i 2 tygodnie.")}catch(e){writeError(e)}finally{$("importBtn").disabled=false}
+});
+function applyPerms(){
+  $("adminBar").hidden=!canDraw;$("adminCard").hidden=!canDraw;
+  $("joinForm").hidden=!canWrite;$("joinLocked").hidden=canWrite;
+  if(canDraw){$("sSlots").value=config.slots.join("\n");$("sStrength").value=String(config.strength)}
+  renderAll();
+}
+
+/* ---------- akcje ---------- */
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+const reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+async function runDraw(fresh){
+  if(busy||!fs)return;
+  const pool=activePool();if(!pool.length){toast("Nikt nie jest zapisany, więc nie ma kogo losować.");return}
+  const w=curWeek();
+  const base=fresh?{}:w.cells;
+  const pts={};pool.forEach(p=>pts[p.id]=p.points||0);
+  if(fresh)for(const c of Object.values(w.cells))if(pts[c.pid]!=null)pts[c.pid]=Math.max(0,pts[c.pid]-1);
+  const{cells,order}=drawCells({pool,points:pts,cells:base,off:w.off,rows:config.slots.length,strength:config.strength});
+  if(!order.length){toast("Wszystkie miejsca są już obsadzone.");return}
+  busy=true;animCells=Object.assign({},base);renderGrid();
+  if(!reduced){
+    for(const[r,d]of order){
+      const key=r+"-"+d;
+      for(let i=0;i<7;i++){
+        const p=pool[Math.floor(Math.random()*pool.length)];
+        animCells[key]={pid:p.id,name:p.name,cls:p.cls};renderGrid();
+        const td=document.querySelector('td[data-key="'+key+'"]');if(td)td.classList.add("rolling");
+        await sleep(45);
+      }
+      animCells[key]=cells[key];renderGrid();
+      const td=document.querySelector('td[data-key="'+key+'"]');if(td)td.classList.add("landed");
+      await sleep(140);
+    }
+  }
+  try{await saveWeek(w.off,cells);toast("Wylosowano "+order.length+" "+(order.length===1?"osobę":"osób")+". Punkty dopisane.")}
+  catch(e){writeError(e)}
+  finally{busy=false;animCells=null;renderAll()}
+}
+
+async function clearWeek(){
+  if(busy||!fs)return;const w=curWeek();
+  if(!Object.keys(w.cells).length){toast("Ten tydzień jest już pusty.");return}
+  const b=$("clearBtn");
+  if(b.dataset.confirm!=="1"){b.dataset.confirm="1";b.textContent="Na pewno? Punkty wrócą";setTimeout(()=>{b.dataset.confirm="";b.textContent="Wyczyść tydzień"},4000);return}
+  b.dataset.confirm="";b.textContent="Wyczyść tydzień";
+  busy=true;renderGrid();
+  try{await saveWeek(w.off,{});toast("Tydzień wyczyszczony, punkty cofnięte.")}catch(e){writeError(e)}finally{busy=false;renderAll()}
+}
+
+async function toggleOff(d){
+  if(busy)return;const w=curWeek();w.off[d]=!w.off[d];
+  if(w.off[d])for(let r=0;r<config.slots.length;r++)delete w.cells[r+"-"+d];
+  busy=true;
+  try{await saveWeek(w.off,w.cells)}catch(e){writeError(e)}finally{busy=false;renderAll()}
+}
+
+let mCell=null;
+function openCell(r,d){
+  mCell=[r,d];const c=curWeek().cells[r+"-"+d];
+  $("mTitle").textContent=DAYS[d][0].toUpperCase()+DAYS[d].slice(1)+", "+config.slots[r];
+  $("mWho").textContent=c?"Teraz: "+c.name+" "+c.cls:"Miejsce jest wolne.";
+  const s=$("mPick");s.textContent="";
+  activePool().slice().sort((a,b)=>a.name.localeCompare(b.name,"pl")).forEach(p=>s.append(el("option",{value:p.id},p.name+" "+p.cls+" ("+(p.points||0)+" pkt)")));
+  $("mClear").disabled=!c;$("mSet").disabled=!s.options.length;$("mReroll").disabled=!activePool().length;
+  $("modalBg").hidden=false;$("mReroll").focus();
+}
+function closeCell(){$("modalBg").hidden=true;mCell=null}
+async function cellAction(kind){
+  if(!mCell||busy)return;const[r,d]=mCell,key=r+"-"+d,w=curWeek(),old=w.cells[key];
+  if(kind==="clear")delete w.cells[key];
+  else if(kind==="set"){const p=people.find(x=>x.id===$("mPick").value);if(!p)return;w.cells[key]={pid:p.id,name:p.name,cls:p.cls}}
+  else{
+    const pool=activePool(),pts={};pool.forEach(p=>pts[p.id]=p.points||0);
+    if(old&&pts[old.pid]!=null)pts[old.pid]=Math.max(0,pts[old.pid]-1);
+    const rest=Object.assign({},w.cells);delete rest[key];
+    const poolEx=old&&pool.length>1?pool.filter(p=>p.id!==old.pid):pool;
+    const{cells}=drawCells({pool:poolEx,points:pts,cells:rest,off:w.off.map((_,i)=>i!==d),rows:config.slots.length,strength:config.strength});
+    if(!cells[key])return;w.cells[key]=cells[key];
+  }
+  closeCell();busy=true;renderGrid();
+  try{await saveWeek(w.off,w.cells);if(kind==="reroll")toast("Nowa osoba: "+w.cells[key].name+" "+w.cells[key].cls)}
+  catch(e){writeError(e)}finally{busy=false;renderAll()}
+}
+
+async function bump(p,dv){
+  const np=Math.max(0,(p.points||0)+dv);if(np===(p.points||0))return;
+  try{await FB.setDoc(FB.doc(fs,"points",p.id),{points:np})}catch(e){writeError(e)}
+}
+async function togglePause(p){try{await FB.updateDoc(FB.doc(fs,"people",p.id),{active:p.active===false})}catch(e){writeError(e)}}
+async function removePerson(p,btn){
+  if(btn.dataset.confirm!=="1"){btn.dataset.confirm="1";btn.textContent="Na pewno?";setTimeout(()=>{btn.dataset.confirm="";btn.textContent="Usuń"},4000);return}
+  try{const b=FB.writeBatch(fs);b.delete(FB.doc(fs,"people",p.id));b.delete(FB.doc(fs,"points",p.id));await b.commit();toast("Usunięto: "+p.name)}catch(e){writeError(e)}
+}
+
+function cleanCls(s){return String(s||"").trim().replace(/\s+/g,"").toLowerCase().slice(0,6)}
+function cleanName(s){return String(s||"").trim().replace(/\s+/g," ").slice(0,60)}
+function slugName(name){return norm(name).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/ł/g,"l").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,64)}
+/* Identyfikator zapisu = imię i nazwisko bez polskich znaków. Reguły Firebase pozwalają gościowi tylko UTWORZYĆ wpis, więc drugi zapis tej samej osoby serwer odrzuca. */
+async function addPerson(name,cls,note){
+  const id=slugName(name);if(id.length<3)throw{code:"bad-name"};
+  await FB.setDoc(FB.doc(fs,"people",id),{name,cls,note:note||"",active:true,createdAt:FB.serverTimestamp()});
+}
+
+$("joinForm").addEventListener("submit",async e=>{
+  e.preventDefault();const msg=$("joinMsg");msg.className="msg";
+  const name=cleanName($("fName").value),cls=cleanCls($("fCls").value),note=String($("fNote").value||"").trim().slice(0,80);
+  if(name.split(" ").length<2){msg.className="msg err";msg.textContent="Wpisz imię i nazwisko.";$("fName").focus();return}
+  if(!/^[0-9][a-z0-9]{0,5}$/.test(cls)){msg.className="msg err";msg.textContent="Wpisz klasę, np. 2e.";$("fCls").focus();return}
+  if(!$("fRules").checked){msg.className="msg err";msg.textContent="Zaakceptuj regulamin, żeby się zapisać.";$("fRules").focus();return}
+  if(!fs){msg.className="msg err";msg.textContent="Brak połączenia z bazą. Odśwież stronę.";return}
+  const dup=people.find(p=>slugName(p.name)===slugName(name));
+  if(dup){msg.className="msg err";msg.textContent=dup.cls===cls?"Już jesteś na liście. Drugi zapis łamie regulamin.":"Osoba o tym imieniu i nazwisku jest już zapisana (klasa "+dup.cls+"). Drugi zapis łamie regulamin. Jeśli to pomyłka, napisz do organizatora.";return}
+  $("joinBtn").disabled=true;
+  try{await addPerson(name,cls,note);msg.className="msg ok";msg.textContent="Zapisano! Powodzenia w losowaniu.";$("joinForm").reset()}
+  catch(err){msg.className="msg err";msg.textContent=err&&err.code==="permission-denied"?"Ta osoba jest już zapisana. Drugi zapis łamie regulamin.":"Nie udało się zapisać. Sprawdź internet i spróbuj jeszcze raz."}
+  finally{$("joinBtn").disabled=false}
+});
+
+$("bulkBtn").addEventListener("click",async()=>{
+  const lines=$("bulk").value.split("\n").map(s=>s.trim()).filter(Boolean);let added=0,skipped=0,bad=0;
+  const known=new Set(people.map(p=>slugName(p.name)));
+  $("bulkBtn").disabled=true;
+  for(const line of lines){
+    const parts=line.split(/\s+/),last=cleanCls(parts[parts.length-1]);
+    if(parts.length<3||!/^[0-9][a-z0-9]{0,5}$/.test(last)){bad++;continue}
+    const name=cleanName(parts.slice(0,-1).join(" "));
+    if(known.has(slugName(name))){skipped++;continue}
+    try{await addPerson(name,last,"");known.add(slugName(name));added++}catch(e){writeError(e);break}
+  }
+  $("bulkBtn").disabled=false;
+  $("adminMsg").className="msg ok";$("adminMsg").textContent="Dopisano: "+added+(skipped?", już byli: "+skipped:"")+(bad?", nie rozpoznano linii: "+bad:"")+".";
+  if(added)$("bulk").value="";
+});
+
+$("saveCfg").addEventListener("click",async()=>{
+  const slots=$("sSlots").value.split("\n").map(s=>s.trim()).filter(Boolean).slice(0,8),strength=Number($("sStrength").value);
+  if(!slots.length){$("adminMsg").className="msg err";$("adminMsg").textContent="Podaj przynajmniej jedną przerwę.";return}
+  try{await FB.setDoc(FB.doc(fs,"config","main"),{slots,strength});$("adminMsg").className="msg ok";$("adminMsg").textContent="Ustawienia zapisane."}catch(e){writeError(e)}
+});
+
+$("copyBtn").addEventListener("click",async()=>{
+  const w=curWeek();const lines=["Grafik puszczania muzyki na przerwach ("+weekLabel(weekId)+")",""];
+  DAYS.forEach((d,i)=>{
+    if(w.off[i]){lines.push(d+": dzień wolny");return}
+    const parts=config.slots.map((s,r)=>{const c=w.cells[r+"-"+i];return s+" "+(c?c.name+" "+c.cls:"—")});
+    lines.push(d+": "+parts.join(" | "));
+  });
+  try{await navigator.clipboard.writeText(lines.join("\n"));toast("Skopiowano grafik.")}catch(e){toast("Przeglądarka zablokowała kopiowanie.")}
+});
+
+$("prevWeek").addEventListener("click",()=>{weekId=iso(addDays(weekId,-7));renderAll()});
+$("nextWeek").addEventListener("click",()=>{weekId=iso(addDays(weekId,7));renderAll()});
+$("drawBtn").addEventListener("click",()=>runDraw(false));
+$("redrawBtn").addEventListener("click",()=>runDraw(true));
+$("clearBtn").addEventListener("click",clearWeek);
+$("search").addEventListener("input",renderPeople);
+$("mReroll").addEventListener("click",()=>cellAction("reroll"));
+$("mSet").addEventListener("click",()=>cellAction("set"));
+$("mClear").addEventListener("click",()=>cellAction("clear"));
+$("mClose").addEventListener("click",closeCell);
+$("modalBg").addEventListener("click",e=>{if(e.target===$("modalBg"))closeCell()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("modalBg").hidden)closeCell()});
+
+/* ---------- start ---------- */
+applyPerms();
+if(!firebaseConfig.apiKey){
+  gotPeople=gotWeeks=true;setMode();
+  showBanner("Strona nie jest jeszcze podłączona do bazy. Wklej konfigurację Firebase na górze pliku index.html (krok 4 instrukcji).");
+}else{
+  const app=initializeApp(firebaseConfig);fs=getFirestore(app);auth=getAuth(app);
+  setMode();
+  onAuthStateChanged(auth,u=>{isAdmin=!!u&&u.email===ADMIN_EMAIL;if(!isAdmin)adminView=true;setMode()});
+  const timer=setTimeout(()=>showBanner("Nie mogę połączyć się z bazą. Sprawdź internet. To, co widzisz, może być nieaktualne."),10000);
+  onSnapshot(doc(fs,"config","main"),s=>{
+    const d=s.exists()?s.data():null;
+    config={slots:(d&&Array.isArray(d.slots)&&d.slots.length?d.slots.slice():DEFAULT_SLOTS.slice()),strength:(d&&typeof d.strength==="number"?d.strength:2)};
+    $("formula").textContent=config.strength===0?"1 (wszyscy równo)":"1 / (1 + punkty)"+(config.strength===1?"":config.strength===2?"²":"³");
+    if(canDraw){$("sSlots").value=config.slots.join("\n");$("sStrength").value=String(config.strength)}
+    if(!busy)renderAll();
+  },()=>{});
+  onSnapshot(collection(fs,"people"),s=>{
+    if(!s.metadata.fromCache){clearTimeout(timer);hideBanner()}
+    gotPeople=true;
+    rawPeople=s.docs.map(x=>{const d=x.data()||{};return{id:x.id,name:String(d.name||"?"),cls:String(d.cls||""),note:String(d.note||""),active:d.active!==false}});
+    mergePeople();if(!busy)setMode();
+  },e=>{clearTimeout(timer);showBanner("Nie udało się wczytać listy zapisanych. Sprawdź reguły bazy (krok 5 instrukcji).")});
+  onSnapshot(collection(fs,"points"),s=>{
+    pointsMap={};s.docs.forEach(x=>{pointsMap[x.id]=Math.max(0,Number((x.data()||{}).points)||0)});
+    mergePeople();if(!busy)renderAll();
+  },()=>{});
+  onSnapshot(collection(fs,"weeks"),s=>{
+    gotWeeks=true;weeks={};s.docs.forEach(x=>{weeks[x.id]=x.data()||{}});
+    if(!busy)renderAll();
+  },()=>showBanner("Nie udało się wczytać grafiku."));
+}
+function showBanner(t){const b=$("banner");b.textContent=t;b.hidden=false}
+function hideBanner(){$("banner").hidden=true}
+</script>
+</body>
+</html>
