@@ -96,6 +96,7 @@ label .hint{font-weight:400;color:var(--muted)}
 input,select,textarea{font:inherit;font-weight:400;color:var(--ink);background:var(--bg);border:1.5px solid var(--soft);border-radius:9px;padding:9px 11px;width:100%}
 textarea{min-height:110px;resize:vertical}
 .row2{display:grid;grid-template-columns:1fr 110px;gap:10px}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 .rules{border-left:4px solid var(--accent);background:var(--bg);border-radius:0 10px 10px 0;padding:12px 14px;display:grid;gap:6px;font-size:14px}
 .rules h3{font-size:15px;color:var(--accent)}
 .rules ol{margin:0;padding-left:18px;display:grid;gap:4px}
@@ -294,6 +295,7 @@ table.people tr.me td{background:color-mix(in srgb,var(--accent) 8%,transparent)
               <li>Za złamanie regulaminu organizator usuwa wszystkie twoje zapisy i może wykluczyć cię z losowania.</li>
             </ol>
           </div>
+          <div class="hp" aria-hidden="true"><label for="fWebsite">Zostaw to pole puste</label><input id="fWebsite" name="website" tabindex="-1" autocomplete="off"></div>
           <label class="check" for="fRules"><input type="checkbox" id="fRules" required> Zapoznałem/am się z regulaminem i zapisuję tylko siebie</label>
           <button class="primary" type="submit" id="joinBtn">Zapisz mnie</button>
           <div class="msg" id="joinMsg" role="status" aria-live="polite"></div>
@@ -334,6 +336,13 @@ table.people tr.me td{background:color-mix(in srgb,var(--accent) 8%,transparent)
           <textarea id="bulk" placeholder="Jan Kowalski 2a&#10;Anna Nowak 3c"></textarea>
         </label>
         <button id="bulkBtn">Dopisz do listy</button>
+        <hr style="border:none;border-top:1px solid var(--soft);width:100%;margin:4px 0">
+        <h3>Kopia zapasowa</h3>
+        <p class="note">Pobieraj kopię co jakiś czas, np. po każdym losowaniu. Jeśli ktoś coś popsuje, przywrócisz z niej wszystko: osoby, punkty, grafiki i ustawienia.</p>
+        <div class="bar">
+          <button id="backupBtn">Pobierz kopię</button>
+          <label class="btn" for="restoreFile" style="display:inline-flex;font-weight:600">Przywróć z kopii<input type="file" id="restoreFile" accept=".json,application/json" hidden></label>
+        </div>
         <div class="msg" id="adminMsg" role="status" aria-live="polite"></div>
       </section>
     </div>
@@ -397,9 +406,15 @@ const firebaseConfig = {
 const ADMIN_EMAIL = "organizator@muzyka-na-przerwach.pl";
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, writeBatch, serverTimestamp, query, where, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signInAnonymously, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 const FB={doc,collection,onSnapshot,setDoc,updateDoc,writeBatch,serverTimestamp};
+/* Opcjonalnie: klucz reCAPTCHA v3 do Firebase App Check (blokuje skrypty i boty). Puste = wyłączone. */
+const APPCHECK_SITE_KEY = "";
+/* Te same zasady co w regułach bazy (firestore.rules) */
+const NAME_RE=/^[A-Za-zÀ-ž'-]{2,}( [A-Za-zÀ-ž'-]{2,}){1,3}$/;
+const CLS_RE=/^[1-8][a-z]{1,2}$/;
+const NOTE_BAD=/(https?:|www\.|<|>)/i;
 const SEED={"config":{"slots":["9:35 – 9:45","12:10 – 12:30","13:15 – 13:30"],"strength":2},"people":[{"id":"adam-kubacki","name":"Adam Kubacki","cls":"2d","points":1},{"id":"ewa-walkowiak","name":"Ewa Walkowiak","cls":"2e","points":2},{"id":"filip-kulpa","name":"Filip Kulpa","cls":"2c","points":2},{"id":"izabela-krygier","name":"Izabela Krygier","cls":"3c","points":1},{"id":"julia-janiak","name":"Julia Janiak","cls":"2e","points":2},{"id":"krzysztof-bakowski","name":"Krzysztof Bąkowski","cls":"4c","points":2},{"id":"natasza-basinska","name":"Natasza Basińska","cls":"3c","points":2},{"id":"zuzanna-kuzniewska","name":"Zuzanna Kuźniewska","cls":"2g","points":1},{"id":"jan-zawadzki","name":"Jan Zawadzki","cls":"2a","points":1}],"weeks":{"2026-11-02":{"monday":"2026-11-02","off":[true,false,false,false,false],"cells":{"0-1":{"pid":"julia-janiak","name":"Julia Janiak","cls":"2e"},"0-2":{"pid":"adam-kubacki","name":"Adam Kubacki","cls":"2d"},"0-3":{"pid":"natasza-basinska","name":"Natasza Basińska","cls":"3c"},"0-4":{"pid":"krzysztof-bakowski","name":"Krzysztof Bąkowski","cls":"4c"},"1-1":{"pid":"ewa-walkowiak","name":"Ewa Walkowiak","cls":"2e"},"1-2":{"pid":"filip-kulpa","name":"Filip Kulpa","cls":"2c"},"1-3":{"pid":"izabela-krygier","name":"Izabela Krygier","cls":"3c"},"1-4":{"pid":"zuzanna-kuzniewska","name":"Zuzanna Kuźniewska","cls":"2g"}}},"2026-11-09":{"monday":"2026-11-09","off":[false,false,true,true,true],"cells":{"0-0":{"pid":"ewa-walkowiak","name":"Ewa Walkowiak","cls":"2e"},"0-1":{"pid":"natasza-basinska","name":"Natasza Basińska","cls":"3c"},"1-0":{"pid":"krzysztof-bakowski","name":"Krzysztof Bąkowski","cls":"4c"},"1-1":{"pid":"jan-zawadzki","name":"Jan Zawadzki","cls":"2a"},"2-0":{"pid":"julia-janiak","name":"Julia Janiak","cls":"2e"},"2-1":{"pid":"filip-kulpa","name":"Filip Kulpa","cls":"2c"}}}}};
 let fs=null,auth=null;
 const DAYS=["poniedziałek","wtorek","środa","czwartek","piątek"];
@@ -810,7 +825,11 @@ async function bump(p,dv){
 async function togglePause(p){try{await FB.updateDoc(FB.doc(fs,"people",p.id),{active:p.active===false})}catch(e){writeError(e)}}
 async function removePerson(p,btn){
   if(btn.dataset.confirm!=="1"){btn.dataset.confirm="1";btn.textContent="Na pewno?";setTimeout(()=>{btn.dataset.confirm="";btn.textContent="Usuń"},4000);return}
-  try{const b=FB.writeBatch(fs);b.delete(FB.doc(fs,"people",p.id));b.delete(FB.doc(fs,"points",p.id));await b.commit();toast("Usunięto: "+p.name)}catch(e){writeError(e)}
+  try{
+    const b=FB.writeBatch(fs);b.delete(FB.doc(fs,"people",p.id));b.delete(FB.doc(fs,"points",p.id));
+    try{const ls=await getDocs(query(collection(fs,"locks"),where("pid","==",p.id)));ls.forEach(d=>b.delete(d.ref))}catch(e){}
+    await b.commit();toast("Usunięto: "+p.name);
+  }catch(e){writeError(e)}
 }
 
 function cleanCls(s){return String(s||"").trim().replace(/\s+/g,"").toLowerCase().slice(0,6)}
@@ -830,21 +849,38 @@ function slugName(name){return norm(name).normalize("NFD").replace(/[\u0300-\u03
 /* Identyfikator zapisu = imię i nazwisko bez polskich znaków. Reguły Firebase pozwalają gościowi tylko UTWORZYĆ wpis, więc drugi zapis tej samej osoby serwer odrzuca. */
 async function addPerson(name,cls,note){
   const id=slugName(name);if(id.length<3)throw{code:"bad-name"};
-  await FB.setDoc(FB.doc(fs,"people",id),{name,cls,note:note||"",active:true,createdAt:FB.serverTimestamp()});
+  if(isAdmin){await FB.setDoc(FB.doc(fs,"people",id),{name,cls,note:note||"",active:true,createdAt:FB.serverTimestamp()});return}
+  /* Gość: niewidoczne konto anonimowe. Jedno urządzenie = jeden zapis (dokument w locks/), pilnuje tego serwer. */
+  if(!auth.currentUser)await signInAnonymously(auth);
+  const uid=auth.currentUser.uid,b=FB.writeBatch(fs);
+  b.set(FB.doc(fs,"people",id),{name,cls,note:note||"",active:true,createdAt:FB.serverTimestamp(),owner:uid});
+  b.set(FB.doc(fs,"locks",uid),{pid:id});
+  await b.commit();
 }
+let formShownAt=Date.now();
 
 $("joinForm").addEventListener("submit",async e=>{
   e.preventDefault();const msg=$("joinMsg");msg.className="msg";
   const name=cleanName($("fName").value),cls=cleanCls($("fCls").value),note=String($("fNote").value||"").trim().slice(0,80);
-  if(name.split(" ").length<2){msg.className="msg err";msg.textContent="Wpisz imię i nazwisko.";$("fName").focus();return}
-  if(!/^[0-9][a-z0-9]{0,5}$/.test(cls)){msg.className="msg err";msg.textContent="Wpisz klasę, np. 2e.";$("fCls").focus();return}
+  if($("fWebsite").value){msg.className="msg ok";msg.textContent="Zapisano!";$("joinForm").reset();return}
+  if(Date.now()-formShownAt<2500){msg.className="msg err";msg.textContent="Za szybko. Spróbuj jeszcze raz za chwilę.";return}
+  if(!NAME_RE.test(name)){msg.className="msg err";msg.textContent="Wpisz prawdziwe imię i nazwisko, same litery, np. Jan Kowalski.";$("fName").focus();return}
+  if(!CLS_RE.test(cls)){msg.className="msg err";msg.textContent="Wpisz klasę, np. 2e.";$("fCls").focus();return}
+  if(NOTE_BAD.test(note)){msg.className="msg err";msg.textContent="W polu „Co chcesz puścić?” nie wstawiaj linków.";$("fNote").focus();return}
   if(!$("fRules").checked){msg.className="msg err";msg.textContent="Zaakceptuj regulamin, żeby się zapisać.";$("fRules").focus();return}
   if(!fs){msg.className="msg err";msg.textContent="Brak połączenia z bazą. Odśwież stronę.";return}
   const dup=people.find(p=>slugName(p.name)===slugName(name));
   if(dup){msg.className="msg err";msg.textContent=dup.cls===cls?"Już jesteś na liście. Drugi zapis łamie regulamin.":"Osoba o tym imieniu i nazwisku jest już zapisana (klasa "+dup.cls+"). Drugi zapis łamie regulamin. Jeśli to pomyłka, napisz do organizatora.";return}
   $("joinBtn").disabled=true;
   try{await addPerson(name,cls,note);if(!isAdmin)setMe(slugName(name));msg.className="msg ok";msg.textContent="Zapisano! Powodzenia w losowaniu.";$("joinForm").reset();burstNotes($("joinBtn"))}
-  catch(err){msg.className="msg err";msg.textContent=err&&err.code==="permission-denied"?"Ta osoba jest już zapisana. Drugi zapis łamie regulamin.":"Nie udało się zapisać. Sprawdź internet i spróbuj jeszcze raz."}
+  catch(err){
+    msg.className="msg err";
+    if(err&&err.code==="permission-denied"){
+      const taken=people.some(p=>slugName(p.name)===slugName(name));
+      msg.textContent=taken?"Ta osoba jest już zapisana. Drugi zapis łamie regulamin.":"Z tego urządzenia ktoś już się zapisał. Jedno urządzenie = jeden zapis. Jeśli to pomyłka, napisz do organizatora.";
+    }else if(err&&err.code==="auth/too-many-requests")msg.textContent="Za dużo prób z tej sieci. Spróbuj za kilka minut.";
+    else msg.textContent="Nie udało się zapisać. Sprawdź internet i spróbuj jeszcze raz.";
+  }
   finally{$("joinBtn").disabled=false}
 });
 
@@ -854,8 +890,8 @@ $("bulkBtn").addEventListener("click",async()=>{
   $("bulkBtn").disabled=true;
   for(const line of lines){
     const parts=line.split(/\s+/),last=cleanCls(parts[parts.length-1]);
-    if(parts.length<3||!/^[0-9][a-z0-9]{0,5}$/.test(last)){bad++;continue}
     const name=cleanName(parts.slice(0,-1).join(" "));
+    if(parts.length<3||!CLS_RE.test(last)||!NAME_RE.test(name)){bad++;continue}
     if(known.has(slugName(name))){skipped++;continue}
     try{await addPerson(name,last,"");known.add(slugName(name));added++}catch(e){writeError(e);break}
   }
@@ -883,7 +919,11 @@ $("copyBtn").addEventListener("click",async()=>{
 $("prevWeek").addEventListener("click",()=>{weekId=iso(addDays(weekId,-7));renderAll()});
 $("nextWeek").addEventListener("click",()=>{weekId=iso(addDays(weekId,7));renderAll()});
 $("drawBtn").addEventListener("click",()=>runDraw(false));
-$("redrawBtn").addEventListener("click",()=>runDraw(true));
+$("redrawBtn").addEventListener("click",()=>{
+  const b=$("redrawBtn");
+  if(Object.keys(curWeek().cells).length&&b.dataset.confirm!=="1"){b.dataset.confirm="1";b.textContent="Na pewno? Obecny grafik zniknie";setTimeout(()=>{b.dataset.confirm="";b.textContent="Losuj wszystko od nowa"},4000);return}
+  b.dataset.confirm="";b.textContent="Losuj wszystko od nowa";runDraw(true);
+});
 $("clearBtn").addEventListener("click",clearWeek);
 $("search").addEventListener("input",renderPeople);
 $("mReroll").addEventListener("click",()=>cellAction("reroll"));
@@ -893,13 +933,50 @@ $("mClose").addEventListener("click",closeCell);
 $("modalBg").addEventListener("click",e=>{if(e.target===$("modalBg"))closeCell()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("modalBg").hidden)closeCell()});
 
+/* ---------- kopia zapasowa ---------- */
+$("backupBtn").addEventListener("click",()=>{
+  const data={app:"muzyka-na-przerwach",version:1,exportedAt:new Date().toISOString(),config,
+    people:rawPeople.map(p=>({id:p.id,name:p.name,cls:p.cls,note:p.note,active:p.active})),points:pointsMap,weeks};
+  const blob=new Blob([JSON.stringify(data,null,1)],{type:"application/json"}),a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download="muzyka-kopia-"+iso(new Date())+".json";document.body.append(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);toast("Kopia pobrana.");
+});
+let pendingRestore=null;
+$("restoreFile").addEventListener("change",async e=>{
+  const f=e.target.files[0];e.target.value="";if(!f)return;
+  let d;try{d=JSON.parse(await f.text())}catch(err){toast("To nie jest plik kopii.");return}
+  if(!d||d.app!=="muzyka-na-przerwach"||!Array.isArray(d.people)){toast("To nie jest plik kopii tej strony.");return}
+  pendingRestore=d;
+  $("adminMsg").className="msg err";$("adminMsg").textContent="";
+  $("adminMsg").append("Kopia z "+String(d.exportedAt||"").slice(0,10)+": "+d.people.length+" osób, "+Object.keys(d.weeks||{}).length+" tygodni. Obecne dane zostaną zastąpione. ",
+    el("button",{class:"small primary",onclick:doRestore},"Tak, przywróć"));
+});
+async function doRestore(){
+  const d=pendingRestore;if(!d)return;pendingRestore=null;
+  const ops=[];
+  const keepPeople=new Set(d.people.map(p=>p.id));
+  rawPeople.forEach(p=>{if(!keepPeople.has(p.id))ops.push(b=>b.delete(doc(fs,"people",p.id)))});
+  Object.keys(pointsMap).forEach(id=>{if(!(d.points||{})[id])ops.push(b=>b.delete(doc(fs,"points",id)))});
+  Object.keys(weeks).forEach(id=>{if(!(d.weeks||{})[id])ops.push(b=>b.delete(doc(fs,"weeks",id)))});
+  if(d.config)ops.push(b=>b.set(doc(fs,"config","main"),{slots:d.config.slots,strength:d.config.strength}));
+  d.people.forEach(p=>ops.push(b=>b.set(doc(fs,"people",p.id),{name:p.name,cls:p.cls,note:p.note||"",active:p.active!==false,createdAt:serverTimestamp()})));
+  Object.entries(d.points||{}).forEach(([id,v])=>ops.push(b=>b.set(doc(fs,"points",id),{points:Math.max(0,Number(v)||0)})));
+  Object.entries(d.weeks||{}).forEach(([id,w])=>ops.push(b=>b.set(doc(fs,"weeks",id),w)));
+  try{
+    for(let i=0;i<ops.length;i+=400){const b=writeBatch(fs);ops.slice(i,i+400).forEach(f=>f(b));await b.commit()}
+    $("adminMsg").className="msg ok";$("adminMsg").textContent="Przywrócono dane z kopii.";
+  }catch(e){writeError(e)}
+}
+
 /* ---------- start ---------- */
 applyPerms();
 if(!firebaseConfig.apiKey){
   gotPeople=gotWeeks=true;setMode();
   showBanner("Strona nie jest jeszcze podłączona do bazy. Wklej konfigurację Firebase na górze pliku index.html (krok 4 instrukcji).");
 }else{
-  const app=initializeApp(firebaseConfig);fs=getFirestore(app);auth=getAuth(app);
+  const app=initializeApp(firebaseConfig);
+  if(APPCHECK_SITE_KEY){try{const ac=await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js");ac.initializeAppCheck(app,{provider:new ac.ReCaptchaV3Provider(APPCHECK_SITE_KEY),isTokenAutoRefreshEnabled:true})}catch(e){}}
+  fs=getFirestore(app);auth=getAuth(app);
   setMode();
   onAuthStateChanged(auth,u=>{isAdmin=!!u&&u.email===ADMIN_EMAIL;if(!isAdmin)adminView=true;setMode()});
   const timer=setTimeout(()=>showBanner("Nie mogę połączyć się z bazą. Sprawdź internet. To, co widzisz, może być nieaktualne."),10000);
